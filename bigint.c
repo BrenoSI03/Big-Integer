@@ -1,53 +1,26 @@
-/**
- * Arquivo: bigint.c
+/*
+ * bigint.c
  * Aluno(s):
  *   Nome_do_Aluno1 - Matrícula - Turma
  *   Nome_do_Aluno2 - Matrícula - Turma
  *
- * Implementação de números inteiros de 128 bits com sinal (BigInt),
- * representados em complemento de dois (two's complement) e ordem
- * little-endian (byte menos significativo primeiro).
- *
- * Cada função abaixo implementa uma das operações básicas definidas
- * para o tipo BigInt.
+ * Implementa números inteiros de 128 bits com sinal (complemento de dois),
+ * armazenados em ordem little-endian (byte menos significativo primeiro).
  */
 
 #include "bigint.h"
-#include <string.h> /* memset, memcpy */
+#include <string.h>  /* memset, memcpy */
 
-#define NUM_BYTES (NUM_BITS/8) /* 16 bytes = 128 bits */
+#define NUM_BYTES (NUM_BITS / 8)  /* 16 bytes = 128 bits */
 
-/* ===========================================================
- * FUNÇÕES AUXILIARES INTERNAS
- * =========================================================== */
-
-/**
- * Função: big_clear
- *
- * Zera todos os bytes do BigInt.
- *
- * @param x Variável BigInt a ser zerada.
- */
-static void big_clear(BigInt x) {
-    memset(x, 0, NUM_BYTES);
-}
-
-/**
- * Função: big_copy
- *
- * Copia o conteúdo de um BigInt para outro.
- *
- * @param dst Destino da cópia.
- * @param src Origem dos dados.
- */
-static void big_copy(BigInt dst, const BigInt src) {
-    memcpy(dst, src, NUM_BYTES);
-}
+/* ============================================================
+ * Funções auxiliares
+ * ============================================================ */
 
 /**
  * Função: sign_bit
  *
- * Retorna o bit de sinal de um BigInt (1 se negativo, 0 se positivo).
+ * Retorna 1 se o número é negativo (bit de sinal = 1), ou 0 caso contrário.
  *
  * @param a Valor BigInt a ser analisado.
  * @return 1 se negativo, 0 se positivo.
@@ -59,10 +32,10 @@ static int sign_bit(const BigInt a) {
 /**
  * Função: add128
  *
- * Soma dois BigInts de 128 bits (módulo 2¹²⁸).
+ * Soma dois BigInts (a + b) módulo 2¹²⁸.
  * O overflow é descartado automaticamente, mantendo o resultado em 128 bits.
  *
- * @param r Resultado da soma (a + b).
+ * @param r Resultado da soma.
  * @param a Primeiro operando.
  * @param b Segundo operando.
  */
@@ -70,30 +43,27 @@ static void add128(BigInt r, const BigInt a, const BigInt b) {
     unsigned int carry = 0;
     for (int i = 0; i < NUM_BYTES; i++) {
         unsigned int sum = (unsigned int)a[i] + (unsigned int)b[i] + carry;
-        r[i]   = (unsigned char)(sum & 0xFF);
-        carry  = sum >> 8;
+        r[i] = (unsigned char)(sum & 0xFF);
+        carry = sum >> 8;
     }
 }
 
 /**
  * Função: big_comp2
  *
- * Calcula o complemento de dois de um BigInt, ou seja, r = -a.
- * O resultado é obtido invertendo todos os bits e somando 1.
+ * Calcula o complemento de dois de um BigInt (r = -a),
+ * invertendo os bits e somando 1.
  *
  * @param r Resultado (BigInt negado).
- * @param a Valor de entrada a ser negado.
+ * @param a Valor original.
  */
 void big_comp2(BigInt r, BigInt a) {
     unsigned char tmp[NUM_BYTES];
     unsigned int carry = 1;
 
-    /* 1. Inverte todos os bits */
-    for (int i = 0; i < NUM_BYTES; i++) {
+    for (int i = 0; i < NUM_BYTES; i++)
         tmp[i] = (unsigned char)(~a[i]);
-    }
 
-    /* 2. Soma 1 ao resultado invertido */
     for (int i = 0; i < NUM_BYTES; i++) {
         unsigned int sum = (unsigned int)tmp[i] + carry;
         r[i] = (unsigned char)(sum & 0xFF);
@@ -101,98 +71,72 @@ void big_comp2(BigInt r, BigInt a) {
     }
 }
 
-/* ===========================================================
- * DESLOCAMENTOS DE 1 BIT
- * =========================================================== */
+/* ============================================================
+ * Deslocamentos de 1 bit
+ * ============================================================ */
 
-/**
- * Função: shl1
- *
- * Desloca o BigInt para a esquerda em 1 bit (shift lógico).
- *
- * @param out Resultado do deslocamento.
- * @param in  Valor original a ser deslocado.
- */
+/* desloca à esquerda (shift lógico de 1 bit) */
 static void shl1(BigInt out, const BigInt in) {
     unsigned int carry = 0;
     for (int i = 0; i < NUM_BYTES; i++) {
-        unsigned int value = ((unsigned int)in[i] << 1) | carry;
-        out[i] = (unsigned char)(value & 0xFF);
-        carry  = (value >> 8) & 0x01;
+        unsigned int v = ((unsigned int)in[i] << 1) | carry;
+        out[i] = (unsigned char)(v & 0xFF);
+        carry = (v >> 8) & 1;
     }
 }
 
-/**
- * Função: shr1
- *
- * Desloca o BigInt para a direita em 1 bit (shift lógico),
- * preenchendo com zeros no bit mais significativo.
- *
- * @param out Resultado do deslocamento.
- * @param in  Valor original a ser deslocado.
- */
+/* desloca à direita (shift lógico de 1 bit) */
 static void shr1(BigInt out, const BigInt in) {
     unsigned int carry = 0;
     for (int i = NUM_BYTES - 1; i >= 0; i--) {
         unsigned int v = ((unsigned int)in[i] >> 1) | (carry << 7);
-        out[i]   = (unsigned char)(v & 0xFF);
-        carry    = in[i] & 0x1;
+        out[i] = (unsigned char)(v & 0xFF);
+        carry = in[i] & 1;
     }
 }
 
-/**
- * Função: sar1
- *
- * Desloca o BigInt para a direita em 1 bit (shift aritmético),
- * preservando o bit de sinal.
- *
- * @param out Resultado do deslocamento.
- * @param in  Valor original a ser deslocado.
- */
+/* desloca à direita (shift aritmético de 1 bit, preservando sinal) */
 static void sar1(BigInt out, const BigInt in) {
     unsigned int carry = 0;
     int sbit = sign_bit(in);
     for (int i = NUM_BYTES - 1; i >= 0; i--) {
-        unsigned int msb_in = (i == NUM_BYTES - 1) ? (sbit << 7) : (carry << 7);
-        unsigned int v = ((unsigned int)in[i] >> 1) | msb_in;
-        out[i]   = (unsigned char)(v & 0xFF);
-        carry    = in[i] & 0x1;
+        unsigned int msb = (i == NUM_BYTES - 1) ? (sbit << 7) : (carry << 7);
+        unsigned int v = ((unsigned int)in[i] >> 1) | msb;
+        out[i] = (unsigned char)(v & 0xFF);
+        carry = in[i] & 1;
     }
 }
 
-/* ===========================================================
- * OPERAÇÕES PRINCIPAIS DA BIBLIOTECA
- * =========================================================== */
+/* ============================================================
+ * Operações principais
+ * ============================================================ */
 
 /**
  * Função: big_val
  *
  * Inicializa um BigInt com o valor de um número long.
- * Realiza a extensão de sinal para os 128 bits.
+ * Os bytes são copiados em ordem little-endian e o sinal é estendido
+ * até completar os 128 bits.
  *
  * @param r   Resultado (BigInt inicializado).
- * @param val Valor long de entrada.
+ * @param val Valor long a ser convertido.
  */
 void big_val(BigInt r, long val) {
     unsigned long u = (unsigned long)val;
     int n = (sizeof(long) < NUM_BYTES) ? (int)sizeof(long) : NUM_BYTES;
 
-    /* Copia os bytes do número original (little-endian) */
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
         r[i] = (unsigned char)((u >> (8 * i)) & 0xFF);
-    }
 
-    /* Extensão de sinal até 128 bits */
     unsigned char fill = (val < 0) ? 0xFF : 0x00;
-    for (int i = n; i < NUM_BYTES; i++) {
+    for (int i = n; i < NUM_BYTES; i++)
         r[i] = fill;
-    }
 }
 
 /**
  * Função: big_sum
  *
- * Soma dois BigInts (a + b), mantendo o resultado módulo 2¹²⁸.
+ * Soma dois BigInts (a + b) módulo 2¹²⁸.
  *
  * @param r Resultado da soma.
  * @param a Primeiro operando.
@@ -228,17 +172,17 @@ void big_sub(BigInt r, BigInt a, BigInt b) {
  * @param n Quantidade de bits a deslocar.
  */
 void big_shl(BigInt r, BigInt a, int n) {
-    if (n <= 0) { big_copy(r, a); return; }
-    if (n >= 128) { big_clear(r); return; }
+    if (n <= 0) { memcpy(r, a, NUM_BYTES); return; }
+    if (n >= 128) { memset(r, 0, NUM_BYTES); return; }
 
     unsigned char cur[NUM_BYTES], nxt[NUM_BYTES];
-    big_copy(cur, a);
+    memcpy(cur, a, NUM_BYTES);
 
     for (int i = 0; i < n; i++) {
         shl1(nxt, cur);
-        big_copy(cur, nxt);
+        memcpy(cur, nxt, NUM_BYTES);
     }
-    big_copy(r, cur);
+    memcpy(r, cur, NUM_BYTES);
 }
 
 /**
@@ -252,45 +196,46 @@ void big_shl(BigInt r, BigInt a, int n) {
  * @param n Quantidade de bits a deslocar.
  */
 void big_shr(BigInt r, BigInt a, int n) {
-    if (n <= 0) { big_copy(r, a); return; }
-    if (n >= 128) { big_clear(r); return; }
+    if (n <= 0) { memcpy(r, a, NUM_BYTES); return; }
+    if (n >= 128) { memset(r, 0, NUM_BYTES); return; }
 
     unsigned char cur[NUM_BYTES], nxt[NUM_BYTES];
-    big_copy(cur, a);
+    memcpy(cur, a, NUM_BYTES);
 
     for (int i = 0; i < n; i++) {
         shr1(nxt, cur);
-        big_copy(cur, nxt);
+        memcpy(cur, nxt, NUM_BYTES);
     }
-    big_copy(r, cur);
+    memcpy(r, cur, NUM_BYTES);
 }
 
 /**
  * Função: big_sar
  *
  * Desloca um BigInt para a direita em n bits (shift aritmético).
- * Preserva o bit de sinal. Se n ≥ 128, preenche com 0x00 ou 0xFF.
+ * Preserva o bit de sinal. Se n ≥ 128, o resultado é preenchido
+ * com 0x00 (para números positivos) ou 0xFF (para negativos).
  *
  * @param r Resultado do deslocamento.
  * @param a Valor original.
  * @param n Quantidade de bits a deslocar.
  */
 void big_sar(BigInt r, BigInt a, int n) {
-    if (n <= 0) { big_copy(r, a); return; }
+    if (n <= 0) { memcpy(r, a, NUM_BYTES); return; }
     if (n >= 128) {
-        unsigned char fill = (sign_bit(a)) ? 0xFF : 0x00;
+        unsigned char fill = sign_bit(a) ? 0xFF : 0x00;
         for (int i = 0; i < NUM_BYTES; i++) r[i] = fill;
         return;
     }
 
     unsigned char cur[NUM_BYTES], nxt[NUM_BYTES];
-    big_copy(cur, a);
+    memcpy(cur, a, NUM_BYTES);
 
     for (int i = 0; i < n; i++) {
         sar1(nxt, cur);
-        big_copy(cur, nxt);
+        memcpy(cur, nxt, NUM_BYTES);
     }
-    big_copy(r, cur);
+    memcpy(r, cur, NUM_BYTES);
 }
 
 /**
@@ -305,26 +250,23 @@ void big_sar(BigInt r, BigInt a, int n) {
  * @param b Multiplicador.
  */
 void big_mul(BigInt r, BigInt a, BigInt b) {
-    unsigned char acc[NUM_BYTES];      /* acumulador do resultado */
-    unsigned char mulcand[NUM_BYTES];  /* multiplicando corrente */
-    unsigned char muler[NUM_BYTES];    /* multiplicador corrente */
-    unsigned char tmp[NUM_BYTES];
+    unsigned char acc[NUM_BYTES] = {0};
+    unsigned char mulcand[NUM_BYTES], muler[NUM_BYTES], tmp[NUM_BYTES];
 
-    big_clear(acc);
-    big_copy(mulcand, a);
-    big_copy(muler, b);
+    memcpy(mulcand, a, NUM_BYTES);
+    memcpy(muler, b, NUM_BYTES);
 
     for (int i = 0; i < 128; i++) {
-        if (muler[0] & 0x01) {            /* se bit menos significativo de b é 1 */
-            add128(tmp, acc, mulcand);    /* soma o multiplicando ao acumulador */
-            big_copy(acc, tmp);
+        if (muler[0] & 1) {
+            add128(tmp, acc, mulcand);
+            memcpy(acc, tmp, NUM_BYTES);
         }
-        shl1(tmp, mulcand);               /* desloca multiplicando à esquerda */
-        big_copy(mulcand, tmp);
+        shl1(tmp, mulcand);
+        memcpy(mulcand, tmp, NUM_BYTES);
 
-        shr1(tmp, muler);                 /* desloca multiplicador à direita */
-        big_copy(muler, tmp);
+        shr1(tmp, muler);
+        memcpy(muler, tmp, NUM_BYTES);
     }
 
-    big_copy(r, acc);
+    memcpy(r, acc, NUM_BYTES);
 }
