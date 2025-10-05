@@ -8,11 +8,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static void dump_hex(const char *tag, const BigInt x) {
-    printf("%s = 0x", tag);
-    for (int i = NUM_BITS/8 - 1; i >= 0; --i) printf("%02X", x[i]);
-    putchar('\n');
-}
 
 static int eq(const BigInt a, const BigInt b) { return memcmp(a,b,NUM_BITS/8)==0; }
 
@@ -29,7 +24,10 @@ int main(void) {
 
     big_val(a, -2L);
     /* exp = {FE,FF,...,FF} */
-    for (int i=0;i<16;i++) exp[i]=0xFF; exp[0]=0xFE;
+    for (int i=0;i<16;i++) {
+        exp[i]=0xFF; 
+        exp[0]=0xFE;
+    }
     ASSERT_TRUE("big_val(-2)", eq(a, exp));
 
     /* comp2: -1 = comp2(1) */

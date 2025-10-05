@@ -26,13 +26,6 @@ static int sign_bit(const BigInt a) {
     return (a[NUM_BYTES - 1] & 0x80) != 0;
 }
 
-/* Get bit i (0..127), little-endian addressing */
-static int get_bit(const BigInt a, int i) {
-    int byte_index = i >> 3;       /* i/8 */
-    int bit_index  = i & 7;        /* i%8 */
-    return (a[byte_index] >> bit_index) & 1;
-}
-
 /* r = a + b (mod 2^128) */
 static void add128(BigInt r, const BigInt a, const BigInt b) {
     unsigned int carry = 0;
