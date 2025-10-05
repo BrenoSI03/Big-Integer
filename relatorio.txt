@@ -1,0 +1,94 @@
+Relatório – Implementação de Biblioteca BigInt (128 bits)
+
+Aluno: Carolina de Assis Souza - Matrícula: 2320860 - Turma: <Colocar-Turma>
+
+Descrição do trabalho
+
+O trabalho consistiu em implementar, em linguagem C, uma biblioteca de números inteiros de 128 bits com sinal (BigInt), representados em complemento de dois e ordem little-endian.
+A biblioteca tem como objetivo fornecer operações aritméticas básicas sobre inteiros grandes que ultrapassam o limite padrão dos tipos primitivos da linguagem.
+
+Foram implementadas as seguintes funções:
+
+- big_val — inicializa um BigInt a partir de um valor do tipo long, realizando extensão de sinal.
+- big_comp2 — calcula o complemento de dois, obtendo o valor negado de um BigInt.
+- big_sum — realiza a soma entre dois BigInts (módulo 2¹²⁸).
+- big_sub — realiza a subtração (implementada como soma do complemento de dois).
+- big_shl — deslocamento lógico à esquerda.
+- big_shr — deslocamento lógico à direita.
+- big_sar — deslocamento aritmético à direita (mantendo o bit de sinal).
+- big_mul — multiplicação entre dois BigInts, pelo método clássico de “shift and add”.
+
+
+Funcionalidades testadas e resultados obtidos:
+
+A) Inicialização de valores
+
+Função: big_val
+
+Objetivo: verificar se a função inicializa corretamente números positivos e negativos, mantendo o sinal estendido até os 128 bits.
+
+Testes realizados:
+
+- big_val(1) → esperado {01 00 ... 00}
+- big_val(-2) → esperado {FE FF ... FF}
+
+Resultados: ambos os testes passaram corretamente, confirmando o funcionamento da extensão de sinal.
+
+B) Complemento de dois
+
+Função: big_comp2
+
+Objetivo: validar a operação de negação de um número (-a).
+
+Teste:
+
+- big_comp2(1) → esperado -1 ({FF FF ... FF})
+
+Resultado: teste bem-sucedido; a função inverteu os bits e somou 1 corretamente.
+
+C) Soma e subtração
+
+Funções: big_sum, big_sub
+
+Testes:
+
+- 1 + 2 = 3
+- 3 - 5 = -2
+
+Resultados:
+
+Todos os testes retornaram os valores esperados além da funcionalidade de complemento de dois na subtração.
+
+D) Deslocamentos (shifts)
+
+Funções: big_shl, big_shr, big_sar
+
+Testes:
+
+- 1 << 8 → esperado {00 01 00 ...}
+- 0x80... >> 1 (lógico) → esperado 0x40...
+- (-2) >> 1 (aritmético) → esperado -1 ({FF FF ... FF})
+
+Resultados:
+
+Todos os deslocamentos apresentaram comportamento esperado.
+
+E) Multiplicação
+
+Função: big_mul
+
+Testes:
+
+- 5 * (-3) → esperado -15
+- (1 << 64) * 2 → esperado (1 << 65)
+
+Resultados:
+
+Ambos os testes foram bem-sucedidos.
+
+O algoritmo de multiplicação baseado em somas e deslocamentos sucessivos funcionou corretamente para números positivos e negativos.
+
+
+Conclusão:
+
+A partir dos testes realizados, a biblioteca BigInt demonstrou funcionamento completo e correto para todas as operações propostas.

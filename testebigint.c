@@ -1,7 +1,5 @@
 /* testebigint.c
- * Aluno(s):
- *   Nome_do_Aluno1 Matricula Turma
- *   Nome_do_Aluno2 Matricula Turma
+ * Carolina de Assis Souza 2320860 - <Colocar Turma>
 */
 
 #include "bigint.h"

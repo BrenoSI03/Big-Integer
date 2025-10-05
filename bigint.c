@@ -1,15 +1,12 @@
 /*
- * bigint.c
- * Aluno(s):
- *   Nome_do_Aluno1 - Matrícula - Turma
- *   Nome_do_Aluno2 - Matrícula - Turma
+ * Carolina de Assis Souza 2320860 - <Colocar Turma>
  *
  * Implementa números inteiros de 128 bits com sinal (complemento de dois),
  * armazenados em ordem little-endian (byte menos significativo primeiro).
  */
 
 #include "bigint.h"
-#include <string.h>  /* memset, memcpy */
+#include <string.h> 
 
 #define NUM_BYTES (NUM_BITS / 8)  /* 16 bytes = 128 bits */
 
